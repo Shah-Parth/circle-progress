@@ -11,154 +11,145 @@ Polymer-based web component displaying a circular progress bar.
 -->
 
 <dom-module id="circle-progress">
-    <template>
+  <template>
+    <style>
+      :host {
+        @apply --layout-vertical;
+        @apply --layout-center-center;
+        position: relative;
+        width: var(--circle-progress-width, 64px);
+        height: var(--circle-progress-height, 64px);
+        margin: 24px;
+        border-radius: 50%;
+      }
 
-        <style>
+      svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: none;
+      }
 
-            :host {
-                @apply(--layout-vertical);
-                @apply(--layout-center-center);
+      .circle-background {
+        stroke: var(--circle-progress-bg-stroke-color, var(--paper-grey-100));
+      }
 
-                position: relative;
+      .circle-foreground {
+        transition: stroke-dashoffset 150ms;
+        stroke: var(--circle-progress-stroke-color, var(--accent-color));
+        stroke-linecap: var(--circle-progress-stroke-linecap, round);
+      }
+    </style>
 
-                width: var(--circle-progress-width, 64px);
-                height: var(--circle-progress-height, 64px);
-                margin: 24px;
+    <svg id="circle" width="100%" height="100%">
+      <circle class="circle-background" r$="[[_radius]]" cx$="[[_cx]]" cy$="[[_cy]]" fill="transparent" stroke-width$="[[strokeWidth]]"/>
+      <circle class="circle-foreground" r$="[[_radius]]" cx$="[[_cx]]" cy$="[[_cy]]" fill="transparent" stroke-width$="[[strokeWidth]]" stroke-dasharray$="[[_dasharray]]" stroke-dashoffset$="[[_dashoffset]]" transform$="[[_transform]]"/>
+    </svg>
 
-                border-radius: 50%;
-            }
+    <slot></slot>
 
-            svg {
-                position: absolute;
-                top: 0;
-                left: 0;
+  </template>
+  <script>
+    Polymer({
+      is: 'circle-progress',
 
-                display: none;
-            }
+      behaviors: [Polymer.IronResizableBehavior],
 
-            .circle-background {
-                stroke: var(--circle-progress-bg-stroke-color, --paper-grey-100);
-            }
+      properties: {
+        /**
+         * Value of circular progress bar.
+         */
+        value: {
+          type: Number,
+          value: 0,
+        },
 
-            .circle-foreground {
-                transition: stroke-dashoffset 150ms;
+        /**
+         * Maximum of value.
+         */
+        max: {
+          type: Number,
+          value: 100,
+        },
 
-                stroke: var(--circle-progress-stroke-color, --accent-color);
-                stroke-linecap: var(--circle-progress-stroke-linecap, round);
-            }
+        /**
+         * Stroke width of circle.
+         */
+        strokeWidth: {
+          type: Number,
+          value: 4,
+        },
 
-        </style>
+        /**
+         * Starting angle of the progress.
+         */
+        angle: {
+          type: Number,
+          value: -90,
+        },
 
-        <svg id="circle" width="100%" height="100%">
-            <circle class="circle-background" r$="[[_radius]]" cx$="[[_cx]]" cy$="[[_cy]]" fill="transparent" stroke-width$="[[strokeWidth]]"/>
-            <circle class="circle-foreground" r$="[[_radius]]" cx$="[[_cx]]" cy$="[[_cy]]" fill="transparent" stroke-width$="[[strokeWidth]]" stroke-dasharray$="[[_dasharray]]" stroke-dashoffset$="[[_dashoffset]]" transform$="[[_transform]]"/>
-        </svg>
+        _cx: {
+          type: Number,
+          value: null,
+        },
 
-        <content></content>
+        _cy: {
+          type: Number,
+          value: null,
+        },
 
-    </template>
-    <script>
+        _radius: {
+          type: Number,
+          computed: '_computeRadius(_cx, _cy, strokeWidth)',
+        },
 
-        Polymer({
-            is: 'circle-progress',
+        _transform: {
+          type: String,
+          computed: '_computeTransform(angle, _cx, _cy)',
+        },
 
-            behaviors: [Polymer.IronResizableBehavior],
+        _dasharray: {
+          type: Number,
+          computed: '_computeDashArray(_radius)',
+        },
 
-            properties: {
-                /**
-     * Value of circular progress bar.
-     */
-                value: {
-                    type: Number,
-                    value: 0
-                },
+        _dashoffset: {
+          type: Number,
+          computed: '_computeDashOffset(value, max, _dasharray)',
+        },
+      },
 
-                /**
-     * Maximum of value.
-     */
-                max: {
-                    type: Number,
-                    value: 100
-                },
+      listeners: {
+        'iron-resize': '_onIronResize',
+      },
 
-                /**
-     * Stroke width of circle.
-     */
-                strokeWidth: {
-                    type: Number,
-                    value: 4
-                },
+      _computeDashArray: function(radius) {
+        return 2 * Math.PI * radius;
+      },
 
-                /**
-     * Starting angle of the progress.
-     */
-                angle: {
-                    type: Number,
-                    value: -90
-                },
+      _computeDashOffset: function(value, max, dasharray) {
+        return (1 - value / max) * dasharray;
+      },
 
-                _cx: {
-                    type: Number,
-                    value: null
-                },
+      _computeRadius: function(cx, cy, strokeWidth) {
+        return cx && cy ?
+          Math.max(0, Math.min(cx, cy) - strokeWidth / 2) :
+          0;
+      },
 
-                _cy: {
-                    type: Number,
-                    value: null
-                },
+      _computeTransform: function(angle, cx, cy) {
+        return cx && cy ?
+          'rotate(' + angle + ', ' + cx + ', ' + cy + ')' :
+          '';
+      },
 
-                _radius: {
-                    type: Number,
-                    computed: '_computeRadius(_cx, _cy, strokeWidth)'
-                },
-
-                _transform: {
-                    type: String,
-                    computed: '_computeTransform(angle, _cx, _cy)'
-                },
-
-                _dasharray: {
-                    type: Number,
-                    computed: '_computeDashArray(_radius)'
-                },
-
-                _dashoffset: {
-                    type: Number,
-                    computed: '_computeDashOffset(value, max, _dasharray)'
-                }
-            },
-
-            listeners: {
-                "iron-resize": "_onIronResize"
-            },
-
-            _computeDashArray: function (radius) {
-                return 2 * Math.PI * radius;
-            },
-
-            _computeDashOffset: function (value, max, dasharray) {
-                return (1 - value / max) * dasharray;
-            },
-
-            _computeRadius: function (cx, cy, strokeWidth) {
-                return cx && cy
-                    ? Math.max(0, Math.min(cx, cy) - strokeWidth / 2)
-                    : 0;
-            },
-
-            _computeTransform: function (angle, cx, cy) {
-                return cx && cy
-                    ? 'rotate(' + angle + ', ' + cx + ', ' + cy + ')'
-                    : '';
-            },
-
-            _onIronResize: function () {
-                if (this.offsetWidth && this.offsetHeight) {
-                    this._cx = this.offsetWidth / 2;
-                    this._cy = this.offsetHeight / 2;
-                    this.$.circle.style.display = 'block';
-                }
-            }
-        });
-    </script>
+      _onIronResize: function() {
+        if (this.offsetWidth && this.offsetHeight) {
+          this._cx = this.offsetWidth / 2;
+          this._cy = this.offsetHeight / 2;
+          this.$.circle.style.display = 'block';
+        }
+      },
+    });
+  </script>
 </dom-module>
